@@ -4,7 +4,7 @@ All notable changes to PyEventBT will be documented in this file.
 
 ## [0.0.10] - 2026-05-22
 
-This release expands the list of supported symbols and addresses a correctness issue in the backtesting simulator that prevented some stop loss modifications on open positions.
+This release expands the list of supported symbols, enhances the hook system with a new `ON_FILL_EVENT` hook and richer callback signatures, and addresses a correctness issue in the backtesting simulator that prevented some stop loss modifications on open positions.
 
 ### Highlights
 
@@ -15,6 +15,7 @@ The backtesting simulator now validates stop loss modifications against the curr
 ### Features
 
 - Added `BTCUSD` and `ETHUSD` to the list of supported symbols (by [Meherett](https://github.com/meherett)).
+- **Enhanced Hook System:** Introduces an `ON_FILL_EVENT` hook and updates existing `ON_SIGNAL_EVENT` and `ON_ORDER_EVENT` hooks to pass the relevant event object directly to their callbacks. This provides more context and data to custom hook functions, while maintaining backward compatibility for existing callbacks (by [Meherett](https://github.com/meherett)).
 
 ### Bug Fixes
 
