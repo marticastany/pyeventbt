@@ -2,17 +2,46 @@
 
 All notable changes to PyEventBT will be documented in this file.
 
+## [0.0.10] - 2026-05-22
+
+This release expands the list of supported symbols, enhances the hook system with a new `ON_FILL_EVENT` hook and richer callback signatures, and addresses a correctness issue in the backtesting simulator that prevented some stop loss modifications on open positions.
+
+### Highlights
+
+**Stop loss modification on open positions**
+
+The backtesting simulator now validates stop loss modifications against the current bar's close price rather than the previous bar's close. This previously caused the simulator to reject stop loss changes that were valid at the current price, leading to a mismatch between backtest behavior and how MT5 handles the same operation in live trading.
+
+### Features
+
+- Added `BTCUSD` and `ETHUSD` to the list of supported symbols (by [Meherett](https://github.com/meherett)).
+- **Enhanced Hook System:** Introduces an `ON_FILL_EVENT` hook and updates existing `ON_SIGNAL_EVENT` and `ON_ORDER_EVENT` hooks to pass the relevant event object directly to their callbacks. This provides more context and data to custom hook functions, while maintaining backward compatibility for existing callbacks (by [Meherett](https://github.com/meherett)).
+
+### Bug Fixes
+
+- Fixed a problem where, in some cases, the backtesting simulator was not allowing to modify stop losses on open positions because it was checking for the position open price instead of the current one.
+
+**Full Changelog**: [v0.0.9...v0.0.10](https://github.com/marticastany/pyeventbt/compare/v0.0.9...v0.0.10)
+
 ## [0.0.9] - 2026-04-16
+
+Fixes a multi-symbol synchronization bug in the data connectors that caused symbols to process bars at the wrong speed when they appeared more than once in `tradeable_symbol_list`.
 
 ### Bug Fixes
 
 - Deduplicate `tradeable_symbol_list` in both CSV and MT5 live data connectors to prevent a symbol's data generator from advancing multiple times per cycle. When a symbol appeared more than once in the list, its generator was called N times per `update_bars()` cycle, causing that symbol to process bars at Nx speed and desynchronize from other symbols. A warning is now logged when duplicates are removed.
 
+**Full Changelog**: [v0.0.8...v0.0.9](https://github.com/marticastany/pyeventbt/compare/v0.0.8...v0.0.9)
+
 ## [0.0.8] - 2026-04-14
+
+Improves position sizing precision by ensuring risk-based volume calculations always round down, so the actual risk taken never exceeds the configured risk percentage.
 
 ### Bug Fixes
 
 - Fixed position sizing rounding in `MT5RiskPctSizing` to always round down to the nearest volume step, ensuring the actual risk never exceeds the configured risk percentage. Previously used Python's `round()` (banker's rounding), which could round up and overshoot the intended risk.
+
+**Full Changelog**: [v0.0.7...v0.0.8](https://github.com/marticastany/pyeventbt/compare/v0.0.7...v0.0.8)
 
 ## [0.0.7] - 2026-04-10
 
@@ -45,17 +74,17 @@ Running sequential backtests (e.g. in optimization loops) could leak simulator s
 
 ## [0.0.6] - 2025-12-17
 
-Adds three new technical indicators contributed by @kevin-bruton, along with fixes to the example strategies.
+Adds three new technical indicators along with fixes to the example strategies, all contributed by [kevin-bruton](https://github.com/kevin-bruton).
 
 ### Features
 
-- Added TRIX, DeMarker and RVI indicators (@kevin-bruton)
-- Updated README examples (@kevin-bruton)
+- Added TRIX, DeMarker and RVI indicators
+- Updated README examples
 
 ### Bug Fixes
 
-- Fixed strategy_id in Quantdle MA crossover example (@kevin-bruton)
-- Fixed example strategies (@kevin-bruton)
+- Fixed strategy_id in Quantdle MA crossover example
+- Fixed example strategies
 
 **Full Changelog**: [v0.0.5...v0.0.6](https://github.com/marticastany/pyeventbt/compare/v0.0.5...v0.0.6)
 

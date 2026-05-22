@@ -101,16 +101,17 @@ class TradingDirector():
         self.SIGNAL_GENERATOR.generate_signal(event)
 
     def _handle_signal_event(self, event: SignalEvent) -> None:
-        self.HOOK_SERVICE.call_callbacks(Hooks.ON_SIGNAL_EVENT, self.MODULES)
+        self.HOOK_SERVICE.call_callbacks(Hooks.ON_SIGNAL_EVENT, self.MODULES, event)
         self.PORTFOLIO_HANDLER.process_signal_event(event)
 
     def _handle_order_event(self, event: OrderEvent) -> None:
         self.EXECUTION_ENGINE._process_order_event(event)
-        self.HOOK_SERVICE.call_callbacks(Hooks.ON_ORDER_EVENT, self.MODULES)
+        self.HOOK_SERVICE.call_callbacks(Hooks.ON_ORDER_EVENT, self.MODULES, event)
 
     def _handle_fill_event(self, event: FillEvent) -> None:
+        self.HOOK_SERVICE.call_callbacks(Hooks.ON_FILL_EVENT, self.MODULES, event)
         self.PORTFOLIO_HANDLER.process_fill_event(event)
-    
+
     def _handle_none_event(self, event):
         logger.warning(f"Received a NONE event: {event}")
 

@@ -1244,7 +1244,7 @@ class Mt5SimulatorExecutionEngineConnector(IExecutionEngine):
         #     return 0
         
         # Check if the new SL and TP are valid
-        if not self._check_stop_loss_is_valid(signal_type="BUY" if position.type == 0 else "SELL", sl=new_sl, intended_fill_price=position.price_open):
+        if not self._check_stop_loss_is_valid(signal_type="BUY" if position.type == 0 else "SELL", sl=new_sl, intended_fill_price=position.price_current):
             logger.error(f"{time_in_datetime} - Invalid STOP_LOSS: {new_sl:.5f} for {position.symbol} at {position.price_open:.5f}")
             new_sl = Decimal('0.0')
         
