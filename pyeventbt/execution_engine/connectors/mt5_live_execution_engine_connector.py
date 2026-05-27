@@ -554,8 +554,12 @@ class Mt5LiveExecutionEngineConnector(IExecutionEngine):
         if self._check_succesful_order_execution(result):
             logger.info(f"Order {result.order} successfully cancelled")
         else:
-            logger.warning(f"Cancel Pending Order for {result.request.symbol} failed with retcode: {result.retcode}. Last error: {mt5.last_error()}")
-        
+            if result is None:
+                logger.warning(f"Cancel Pending Order for ticket {order_ticket} failed. Result is None. Last error: {mt5.last_error()}")
+                return None
+            else:
+                logger.warning(f"Cancel Pending Order for {result.request.symbol} failed with retcode: {result.retcode}. Last error: {mt5.last_error()}")
+
         # Convert the result to a dictionary and add the request as a dictionary too. Then convert it back to an OrderSendResult object
         dict_result = result._asdict()
         dict_result['request'] = result.request._asdict()
