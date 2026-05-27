@@ -618,7 +618,10 @@ class Mt5LiveExecutionEngineConnector(IExecutionEngine):
         if self._check_succesful_order_execution(result):
             logger.info(f"Position {position_ticket} SL/TP updated to {new_sl:.5f}/{new_tp:.5f}")
         else:
-            logger.warning(f"Update Position SL/TP for {position_ticket} failed with retcode: {result.retcode}. Last error: {mt5.last_error()}")
+            if result is None:
+                logger.warning(f"Update Position SL/TP for {position_ticket} failed. Result is None. Last error: {mt5.last_error()}")
+            else:
+                logger.warning(f"Update Position SL/TP for {position_ticket} failed with retcode: {result.retcode}. Last error: {mt5.last_error()}")
     
     def _get_account_currency(self) -> str:
         """Get account currency"""
