@@ -411,10 +411,11 @@ class Mt5LiveExecutionEngineConnector(IExecutionEngine):
         else:
             if result is None:
                 logger.warning(f"Pending Order for {symbol} failed. Result is None. Last error: {mt5.last_error()}")
+                return None
             else:
                 logger.warning(f"Pending Order for {symbol} failed with retcode: {result.retcode}. Last error: {mt5.last_error()}")
 
-        
+
         # Convert the result to a dictionary and add the request as a dictionary too. Then convert it back to an OrderSendResult object
         dict_result = result._asdict()
         dict_result['request'] = result.request._asdict()
