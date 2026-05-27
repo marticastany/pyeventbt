@@ -2,6 +2,17 @@
 
 All notable changes to PyEventBT will be documented in this file.
 
+## [0.0.11] - 2026-05-27
+
+Fixes a crash in the MT5 live execution engine connector when `mt5.order_send()` returns `None`. The connector correctly detected the failure but then attempted to read `.retcode` and `.request.symbol` on the `None` result while formatting the warning log, raising an `AttributeError` that propagated up through `run_live` and stopped the strategy.
+
+### Bug Fixes
+
+- Fixed `AttributeError` in `update_position_sl_tp` and `cancel_pending_order` when `mt5.order_send()` returns `None` (e.g. on transient trade-server disconnects). Both branches now log `mt5.last_error()` instead of dereferencing the missing result.
+- Added an early `return None` in `place_pending_order` and `cancel_pending_order` when the order send returns `None`, so the subsequent `result._asdict()` call no longer crashes after a failed send.
+
+**Full Changelog**: [v0.0.10...v0.0.11](https://github.com/marticastany/pyeventbt/compare/v0.0.10...v0.0.11)
+
 ## [0.0.10] - 2026-05-22
 
 This release expands the list of supported symbols, enhances the hook system with a new `ON_FILL_EVENT` hook and richer callback signatures, and addresses a correctness issue in the backtesting simulator that prevented some stop loss modifications on open positions.
