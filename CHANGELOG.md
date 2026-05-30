@@ -2,6 +2,16 @@
 
 All notable changes to PyEventBT will be documented in this file.
 
+## [0.0.12] - 2026-05-29
+
+Fixes a failed stop-loss/take-profit modification in the MT5 live execution engine connector when a caller passes a non-`float` numeric (e.g. a `Decimal`) for `new_sl`/`new_tp`. `mt5.order_send()` only accepts native Python floats for the `sl`/`tp` request fields, so a `Decimal` made the send return `None` with last error `(-2, 'Invalid "sl" argument')` and the modification was silently dropped. This complements the 0.0.11 fix, which handled the `None` result gracefully but did not address why the send was failing. The backtest simulator accepts `Decimal`, so the issue only surfaced in live trading.
+
+### Bug Fixes
+
+- Cast `new_sl`/`new_tp` to `float` when building the `TRADE_ACTION_SLTP` request in `update_position_sl_tp`, so callers passing `Decimal` (or other numerics) no longer trigger `(-2, 'Invalid "sl" argument')` from `mt5.order_send()`. The order-placement paths already cast their `sl`/`tp`; this brings the SL/TP-modification path in line.
+
+**Full Changelog**: [v0.0.11...v0.0.12](https://github.com/marticastany/pyeventbt/compare/v0.0.11...v0.0.12)
+
 ## [0.0.11] - 2026-05-27
 
 Fixes a crash in the MT5 live execution engine connector when `mt5.order_send()` returns `None`. The connector correctly detected the failure but then attempted to read `.retcode` and `.request.symbol` on the `None` result while formatting the warning log, raising an `AttributeError` that propagated up through `run_live` and stopped the strategy.
