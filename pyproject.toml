@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyeventbt"
-version = "0.0.11"
+version = "0.0.12"
 description = "Event-driven backtesting and live trading framework for Python and MetaTrader 5"
 authors = ["Marti Castany, Alain Porto"]
 readme = "README.md"

@@ -607,8 +607,12 @@ class Mt5LiveExecutionEngineConnector(IExecutionEngine):
         update_request = {
             'action': mt5.TRADE_ACTION_SLTP,
             'position': position_ticket,
-            'sl': new_sl if new_sl != 0.0 else current_sl,
-            'tp': new_tp if new_tp != 0.0 else current_tp,
+            # mt5.order_send only accepts native floats for sl/tp; a Decimal (or
+            # other numeric) passed by a caller makes order_send return None with
+            # (-2, 'Invalid "sl" argument'). current_sl/current_tp come from the
+            # MT5 position object and are already floats.
+            'sl': float(new_sl) if new_sl != 0.0 else current_sl,
+            'tp': float(new_tp) if new_tp != 0.0 else current_tp,
         }
 
         # Send the order request and get the result as a OrderSendResult object
