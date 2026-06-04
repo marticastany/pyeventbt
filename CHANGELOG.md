@@ -2,6 +2,16 @@
 
 All notable changes to PyEventBT will be documented in this file.
 
+## [0.0.13] - 2026-06-04
+
+Fixes a redundant MT5 query in the live data provider that, in a rare timing window, could skip a bar and duplicate the next one. In `Mt5LiveDataProvider.update_bars`, a new bar was detected and recorded using one `get_latest_bar` call, but the bar actually delivered to the event queue came from a *second* `get_latest_bar` call. If a timeframe boundary fell between the two calls (a sub-millisecond window), the second call returned a different, newer bar than the one recorded in `last_bar_tf_datetime` — causing the gated bar to be skipped and the newer bar to be re-emitted on the following cycle. The fix reuses the already-fetched bar, which also removes a redundant IPC round-trip per symbol/timeframe on every update cycle. Backtesting is unaffected.
+
+### Bug Fixes
+
+- Reuse the already-fetched bar in `Mt5LiveDataProvider.update_bars` instead of calling `get_latest_bar` a second time to build the event. This eliminates a race where a timeframe boundary between the two calls could skip the detected bar and duplicate the next one, and halves the MT5 IPC calls made per symbol/timeframe on each update.
+
+**Full Changelog**: [v0.0.12...v0.0.13](https://github.com/marticastany/pyeventbt/compare/v0.0.12...v0.0.13)
+
 ## [0.0.12] - 2026-05-29
 
 Fixes a failed stop-loss/take-profit modification in the MT5 live execution engine connector when a caller passes a non-`float` numeric (e.g. a `Decimal`) for `new_sl`/`new_tp`. `mt5.order_send()` only accepts native Python floats for the `sl`/`tp` request fields, so a `Decimal` made the send return `None` with last error `(-2, 'Invalid "sl" argument')` and the modification was silently dropped. This complements the 0.0.11 fix, which handled the `None` result gracefully but did not address why the send was failing. The backtest simulator accepts `Decimal`, so the issue only surfaced in live trading.
