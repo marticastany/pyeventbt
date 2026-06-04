@@ -415,11 +415,16 @@ class Mt5LiveDataProvider(IDataProvider):
                     # Update the latest seen datetime
                     self.last_bar_tf_datetime[symbol][timeframe] = latest_bar.datetime
 
-                    # Add the Bar Event to the event list
+                    # Add the Bar Event to the event list.
+                    # Reuse the bar we already fetched and gated on above instead of
+                    # querying MT5 a second time: a re-fetch can straddle a timeframe
+                    # boundary and return a different (newer) bar than the one recorded
+                    # in last_bar_tf_datetime, which would skip the gated bar and
+                    # duplicate the next one. It also avoids a redundant IPC round-trip.
                     # if symbol_is_futures:
                     #     events_container_list.append(self.get_latest_bar(symbol_contract, timeframe))
                     # else:
-                    events_container_list.append(self.get_latest_bar(symbol, timeframe))
+                    events_container_list.append(latest_bar)
         
         return events_container_list
 
