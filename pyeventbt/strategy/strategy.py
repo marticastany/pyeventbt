@@ -49,6 +49,7 @@ from pyeventbt.risk_engine.services.risk_engine_service import RiskEngineService
 from queue import Queue
 from typing import Callable
 from datetime import datetime, timedelta
+from decimal import Decimal
 from functools import partial
 from pyeventbt.utils.utils import LoggerColorFormatter
 from pyeventbt.utils.utils import TerminalColors, colorize
@@ -294,6 +295,52 @@ class Strategy:
     def activate_schedules(self):
         self.__run_schedules = True
 
+    @staticmethod
+    def _apply_symbols_info_override(symbols_info_override: dict[str, dict]) -> None:
+        """Apply per-run SymbolInfo field overrides onto the loaded simulator data.
+
+        Mutates ``SharedData.symbol_info`` in place. The ``"*"`` key (if present)
+        is applied to every symbol first, so explicit per-symbol entries win.
+        Values are coerced to each field's existing type, which keeps Decimal
+        fields (e.g. ``margin_initial``) Decimal so margin arithmetic stays exact
+        (mixing Decimal and float raises TypeError in the margin formula).
+
+        Args:
+            symbols_info_override (dict[str, dict]): Mapping of symbol name (or
+                ``"*"``) to a dict of ``SymbolInfo`` field -> value overrides.
+
+        Raises:
+            KeyError: if a named symbol is not in the loaded symbol set.
+            AttributeError: if an overridden field does not exist on SymbolInfo.
+        """
+        symbols = SharedData.symbol_info
+
+        # Apply the wildcard first so explicit per-symbol overrides take precedence.
+        ordered = sorted(symbols_info_override.items(), key=lambda kv: kv[0] != "*")
+
+        for symbol_name, field_overrides in ordered:
+            if symbol_name == "*":
+                targets = list(symbols.values())
+            elif symbol_name in symbols:
+                targets = [symbols[symbol_name]]
+            else:
+                raise KeyError(
+                    f"symbols_info_override: unknown symbol '{symbol_name}' "
+                    f"(not in the loaded symbol set)."
+                )
+
+            for target in targets:
+                for field, value in field_overrides.items():
+                    if not hasattr(target, field):
+                        raise AttributeError(
+                            f"symbols_info_override: SymbolInfo has no field '{field}'."
+                        )
+                    current = getattr(target, field)
+                    # str() avoids float->Decimal precision noise (Decimal(0.0005)).
+                    if isinstance(current, Decimal) and not isinstance(value, Decimal):
+                        value = Decimal(str(value))
+                    setattr(target, field, value)
+
     ############################# CREATION OF BACKTEST OBJECTS AND LAUNCHING THE SIMULATOR #############################
     def backtest(
             self,
@@ -309,14 +356,42 @@ class Strategy:
             run_scheduled_taks: bool = False,
             export_backtest_csv: bool = False,
             export_backtest_parquet: bool = True,
-            backtest_results_dir: str|None = None
+            backtest_results_dir: str|None = None,
+            symbols_info_override: dict[str, dict] | None = None
         ):
+        """Run an event-driven backtest of the configured strategy.
+
+        ``symbols_info_override`` overrides any ``SymbolInfo`` field per run
+        *without* editing the packaged ``default_symbols_info.yaml``. The
+        simulator derives required margin solely from each symbol's
+        ``margin_initial`` (e.g. ``0.0333`` -> 30:1), so this is the supported
+        way to change a symbol's effective leverage for a backtest. Use the
+        ``"*"`` key to apply an override to every symbol; explicit per-symbol
+        keys take precedence.
+
+        >>> strategy = Strategy()
+        >>> strategy.backtest(
+        >>>     symbols_to_trade=["GBPUSD"],
+        >>>     symbols_info_override={"*": {"margin_initial": 0.0005}},  # 2000:1
+        >>> )
+
+        Args:
+            symbols_info_override (dict[str, dict], optional): Mapping of symbol
+                name (or ``"*"`` for all symbols) to a dict of ``SymbolInfo``
+                field -> value overrides, applied after the simulator loads its
+                defaults. Defaults to None (packaged values unchanged).
+        """
         if symbols_to_trade is None:
             symbols_to_trade = ['EURUSD']
 
         # Reset SharedData to YAML defaults so sequential backtests (e.g. optimization loops)
         # start with clean simulator state (symbol_info, account_info, etc.)
         SharedData()
+
+        # Apply any per-run symbol-info overrides on top of the freshly loaded
+        # defaults (e.g. margin_initial to set a symbol's effective leverage).
+        if symbols_info_override:
+            self._apply_symbols_info_override(symbols_info_override)
 
         # the queue is instantited here to avoid problems when performing a backtest inside a backtest.
         self.EVENTS_QUEUE = Queue()
