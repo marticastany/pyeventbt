@@ -309,7 +309,8 @@ class Strategy:
             run_scheduled_taks: bool = False,
             export_backtest_csv: bool = False,
             export_backtest_parquet: bool = True,
-            backtest_results_dir: str|None = None
+            backtest_results_dir: str|None = None,
+            data_provider_factory=None,
         ):
         if symbols_to_trade is None:
             symbols_to_trade = ['EURUSD']
@@ -342,7 +343,11 @@ class Strategy:
             backtest_end_timestamp = end_date
         )
         
-        DATA_PROVIDER = DataProvider(self.EVENTS_QUEUE, bt_data_provider_config, trading_context)
+        DATA_PROVIDER = (
+            data_provider_factory(self.EVENTS_QUEUE)
+            if data_provider_factory is not None
+            else DataProvider(self.EVENTS_QUEUE, bt_data_provider_config, trading_context)
+        )
         
         # mgn = int(self.__create_mg_for_strategy_id(strategy_id))
         
