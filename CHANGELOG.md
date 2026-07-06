@@ -2,6 +2,16 @@
 
 All notable changes to PyEventBT will be documented in this file.
 
+## [Unreleased]
+
+Adds a `symbols_info_override` parameter to `Strategy.backtest()` so callers can override any `SymbolInfo` field for a single backtest run without editing the packaged `default_symbols_info.yaml`. The simulator derives required margin solely from each symbol's `margin_initial` (e.g. `0.0333` → 30:1), so this is the supported way to change a symbol's effective leverage for a backtest — previously only achievable by editing the vendored YAML inside the installed package. A `"*"` key applies an override to every symbol; explicit per-symbol keys take precedence, and values are coerced to each field's existing type so `Decimal` fields (such as `margin_initial`) stay `Decimal` and margin arithmetic remains exact.
+
+### Features
+
+- Add `symbols_info_override` to `Strategy.backtest()`: a `dict[str, dict]` mapping a symbol name (or `"*"` for all symbols) to a dict of `SymbolInfo` field → value overrides, applied after the simulator loads its defaults and before the run starts. Enables per-run margin/leverage configuration (and any other symbol field) without modifying the packaged `default_symbols_info.yaml`.
+
+**Full Changelog**: [v0.0.13...HEAD](https://github.com/marticastany/pyeventbt/compare/v0.0.13...HEAD)
+
 ## [0.0.13] - 2026-06-04
 
 Fixes a redundant MT5 query in the live data provider that, in a rare timing window, could skip a bar and duplicate the next one. In `Mt5LiveDataProvider.update_bars`, a new bar was detected and recorded using one `get_latest_bar` call, but the bar actually delivered to the event queue came from a *second* `get_latest_bar` call. If a timeframe boundary fell between the two calls (a sub-millisecond window), the second call returned a different, newer bar than the one recorded in `last_bar_tf_datetime` — causing the gated bar to be skipped and the newer bar to be re-emitted on the following cycle. The fix reuses the already-fetched bar, which also removes a redundant IPC round-trip per symbol/timeframe on every update cycle. Backtesting is unaffected.
