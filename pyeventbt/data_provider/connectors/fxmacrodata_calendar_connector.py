@@ -17,7 +17,7 @@ from urllib.request import Request, urlopen
 
 
 class FXMacroDataCalendarConnector:
-    base_url = "https://fxmacrodata.com/api/v1"
+    base_url = "https://api.fxmacrodata.com/v1"
 
     def __init__(self, api_key: str | None = None, timeout: int = 20) -> None:
         self.api_key = api_key if api_key is not None else os.getenv("FXMD_API_KEY")
